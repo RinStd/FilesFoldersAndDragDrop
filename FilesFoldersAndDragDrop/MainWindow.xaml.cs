@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,6 +53,14 @@ namespace FilesFoldersAndDragDrop
                 Directory.CreateDirectory(dirTemp);
             }
 
+            string currentPath = System.IO.Directory.GetCurrentDirectory();
+            string createPath = currentPath + @"FilesFolders";
+
+            if (!Directory.Exists(createPath))
+            {
+                Directory.CreateDirectory(createPath);
+            }
+
             foreach (string file in files)
             {
                 string readPath = System.IO.Path.GetFullPath(file); // Полный путь к файлу
@@ -67,12 +76,18 @@ namespace FilesFoldersAndDragDrop
 
                 WriteTextInTempFile(myNewList, writePath); // Записываем во временные файлы данные из списка myNewList
 
-                WriteTextInResultFile(readFileName, writePath, readPath); // Соединяем временный файл с загруженным и помещаем в текущую папку
+                WriteTextInResultFile(createPath, readFileName, writePath, readPath); // Соединяем временный файл с загруженным и помещаем в текущую папку
 
-                File.Delete(writePath); // Удалить временный файл               
+                File.Delete(writePath); // Удалить временный файл
+
+
+                FilesNameStackPanel.HorizontalAlignment = HorizontalAlignment.Center;
+                FilesNameStackPanel.Content = "\nЗаберите файлы из папки! \n \n \nЧтобы изменить другие файлы \nперетащите их сюда \nнажмите кнопку Rewrite";
             }
 
             Directory.Delete(dirTemp); // Удалить временную директорию
+
+            Process.Start("explorer", createPath);
         }
 
         private void WriteTextInArrayList(ArrayList lineList, string readPath)
@@ -110,12 +125,11 @@ namespace FilesFoldersAndDragDrop
         {
             ArrayList firstNumber = new ArrayList();
             ArrayList secondNumber = new ArrayList();
-
-            for (int j = 0; j < lineList.Count; j++) // Заполняем списки firstNumber и secondNumber индексом начала и конца описания обработки
+            int j = 0;
+            foreach (string lineListJ in lineList) // Заполняем списки firstNumber и secondNumber индексом начала и конца описания обработки
                                                      // например: Т9 название_инструмента NAT 1 2 3
             {
-                string str = Convert.ToString(lineList[j]);
-                if (str.StartsWith("NAT"))
+                if (lineListJ.StartsWith("NAT"))
                 {
                     firstNumber.Add(j);
                     if (j != 0)
@@ -123,10 +137,10 @@ namespace FilesFoldersAndDragDrop
                         secondNumber.Add(j - 1);
                     }
                 }
+                j++;
             }
 
             // Добавляем последнии строчек, т.к. предыдущий цикл их не записывает
-            firstNumber.Add(lineList.Count - Convert.ToInt32(secondNumber[secondNumber.Count - 1]) + 1);
             secondNumber.Add(lineList.Count - 1);
 
             string exampleString = " "; // перем для разделения строк с NAT из lineList
@@ -138,7 +152,7 @@ namespace FilesFoldersAndDragDrop
 
             ArrayList myList = new ArrayList();
 
-            for (int k = 0; k < firstNumber.Count - 1; k++)
+            for (int k = 0; k < firstNumber.Count; k++)
             {
                 firstRange = Convert.ToInt32(firstNumber[k]);
                 secondRange = Convert.ToInt32(secondNumber[k]);
@@ -174,20 +188,18 @@ namespace FilesFoldersAndDragDrop
                 }
             }
 
-            string bString = " ";
-
-            foreach (string aString in myList)
+            int kIndex = 0;
+            for (int k = 0; k < myList.Count; k++)
             {
-
+                string aString = Convert.ToString(myList[k]);
+                if (aString.StartsWith("T"))
+                {
+                    myNewList.Add(myList[k]);
+                    kIndex++;
+                }
                 if (aString.StartsWith("NAT"))
                 {
-                    bString = bString + "_" + aString.Substring(3, 2);
-                }
-                else
-                {
-                    myNewList.Add(bString);
-                    bString = " ";
-                    bString = aString;
+                    myNewList[kIndex-1] = Convert.ToString(myNewList[kIndex-1]) + " _" + aString.Substring(3, 2);
                 }
             }
         }
@@ -206,10 +218,14 @@ namespace FilesFoldersAndDragDrop
             }
         }
 
-        private void WriteTextInResultFile(string readFileName, string writePath, string readPath)
+        private void WriteTextInResultFile(string createPath, string readFileName, string writePath, string readPath)
         {
-            string currentPath = System.IO.Directory.GetCurrentDirectory();
-            string newPath = $"{currentPath}\\{readFileName}";
+            string newPath = $"{createPath}\\{readFileName}";
+
+            if (!Directory.Exists(createPath))
+            {
+                Directory.CreateDirectory(createPath);
+            }
 
             string writeVariable = File.ReadAllText(writePath, Encoding.Default);
             string probell02 = "\n";
